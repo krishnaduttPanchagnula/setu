@@ -1,0 +1,39 @@
+# ai-harness configuration (PRD section 2.2)
+core:
+  default_harness: "claude-code" # ollama | lmstudio | claude-code | copilot-cli
+  workspace_dir: ".ai-context"
+
+ticketing:
+  provider: "jira" # jira | azure | manual
+  status_filter: "ready-to-work"
+  assignee: "dev@company.com"
+  jira:
+    url: "https://company.atlassian.net"
+    username: "dev@company.com"
+    # token: via AI_HARNESS_JIRA_TOKEN or JIRA_API_TOKEN
+  azure:
+    url: "https://dev.azure.com/company"
+    org: "company"
+    project: "proj"
+    # pat: via AI_HARNESS_AZURE_PAT or AZURE_DEVOPS_PAT
+
+confluence:
+  enabled: false
+  base_url: "https://company.atlassian.net"
+  space_key: "ENG"
+  parent_page_id: "123456789"
+  # token: via AI_HARNESS_CONFLUENCE_TOKEN or CONFLUENCE_API_TOKEN
+
+harnesses:
+  claude-code:
+    command: "claude"
+    args: []
+  copilot-cli:
+    command: "gh"
+    args: ["copilot", "suggest"]
+  ollama:
+    command: "ollama"
+    args: ["run", "qwen2.5-coder"]
+  lmstudio:
+    command: "lms"
+    args: ["chat"]

@@ -1,0 +1,27 @@
+# Build output
+/setu
+/setu.exe
+*.exe
+*.test
+*.out
+
+# Coverage / profiling
+cover.out
+coverage.out
+*.prof
+profile.cpu
+profile.mem
+
+# Release artifacts
+/dist/
+
+# Editor / OS noise
+.vscode/
+.idea/
+.DS_Store
+*.swp
+*~
+
+# Local config with secrets (never commit)
+/config.yaml
+ai-harness-config.yaml
