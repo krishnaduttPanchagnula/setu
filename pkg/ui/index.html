@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>setu · Knowledge Base</title>
+<style>
+  :root {
+    --bg: #0f1115; --panel: #161a21; --panel2: #1c212b; --border: #2a3140;
+    --text: #e6e9ef; --muted: #8b94a7; --accent: #6ea8fe;
+    --ok: #3fb96f; --fail: #e5534b; --warn: #d4a72c;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 14px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+    height: 100vh; display: flex; flex-direction: column;
+  }
+  header {
+    display: flex; align-items: center; gap: 14px; padding: 12px 18px;
+    background: var(--panel); border-bottom: 1px solid var(--border);
+  }
+  .brand { font-weight: 700; font-size: 16px; letter-spacing: .3px; }
+  .brand .tag { color: var(--muted); font-weight: 400; margin-left: 8px; font-size: 13px; }
+  .stats { color: var(--muted); font-size: 12.5px; margin-left: auto; }
+  .stats b { color: var(--text); }
+  button {
+    background: var(--panel2); color: var(--text); border: 1px solid var(--border);
+    border-radius: 6px; padding: 6px 12px; font-size: 13px; cursor: pointer;
+  }
+  button:hover { border-color: var(--accent); }
+  #main { flex: 1; display: grid; grid-template-columns: 360px 1fr; min-height: 0; }
+  #side { border-right: 1px solid var(--border); display: flex; flex-direction: column; min-height: 0; background: var(--panel); }
+  #search {
+    margin: 12px; padding: 8px 10px; background: var(--bg); color: var(--text);
+    border: 1px solid var(--border); border-radius: 6px; font-size: 13px; outline: none;
+  }
+  #search:focus { border-color: var(--accent); }
+  #list { overflow-y: auto; padding: 0 8px 12px; }
+  .run {
+    padding: 10px 10px; border-radius: 8px; cursor: pointer; border: 1px solid transparent;
+    margin-bottom: 6px;
+  }
+  .run:hover { background: var(--panel2); }
+  .run.active { background: var(--panel2); border-color: var(--accent); }
+  .run .row1 { display: flex; align-items: center; gap: 8px; }
+  .run .id { font-family: var(--mono); font-size: 12.5px; color: var(--accent); font-weight: 600; }
+  .run .title { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .run .row2 { display: flex; gap: 8px; color: var(--muted); font-size: 12px; margin-top: 3px; align-items: center; }
+  .badge { font-size: 10.5px; padding: 1px 7px; border-radius: 20px; font-weight: 600; text-transform: uppercase; letter-spacing: .4px; }
+  .badge.completed { background: rgba(63,185,111,.15); color: var(--ok); }
+  .badge.failed { background: rgba(229,83,75,.15); color: var(--fail); }
+  .badge.in-progress { background: rgba(212,167,44,.15); color: var(--warn); }
+  .sep { flex: 1; }
+  #detail { overflow-y: auto; padding: 20px 26px; min-height: 0; }
+  #detail h1 { font-size: 20px; margin: 0 0 4px; }
+  #detail h1 .kid { font-family: var(--mono); color: var(--accent); margin-right: 10px; }
+  .meta { display: flex; flex-wrap: wrap; gap: 8px 22px; color: var(--muted); font-size: 12.5px; margin: 10px 0 4px; }
+  .meta div b { color: var(--text); font-weight: 500; }
+  .meta .path { font-family: var(--mono); }
+  .tabs { display: flex; gap: 4px; margin: 18px 0 0; border-bottom: 1px solid var(--border); }
+  .tab {
+    padding: 8px 14px; cursor: pointer; color: var(--muted); font-size: 13px;
+    border: none; background: none; border-bottom: 2px solid transparent; border-radius: 0;
+  }
+  .tab.active { color: var(--text); border-bottom-color: var(--accent); }
+  .tab:hover { color: var(--text); }
+  .pane { padding-top: 16px; }
+  pre {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 8px;
+    padding: 14px; overflow-x: auto; font-family: var(--mono); font-size: 12.5px;
+    white-space: pre-wrap; word-break: break-word;
+  }
+  .md { max-width: 860px; }
+  .md h1, .md h2, .md h3, .md h4, .md h5 { margin: 18px 0 8px; }
+  .md h2 { font-size: 17px; } .md h3 { font-size: 15px; }
+  .md p { margin: 8px 0; } .md code { background: var(--panel2); padding: 1px 6px; border-radius: 4px; font-family: var(--mono); font-size: 12.5px; }
+  .md pre { background: var(--panel); } .md pre code { background: none; padding: 0; }
+  .md a { color: var(--accent); }
+  .md ul, .md ol { padding-left: 22px; }
+  .file { margin-bottom: 16px; }
+  .file .fname { font-family: var(--mono); font-size: 12.5px; color: var(--accent); margin-bottom: 6px; }
+  .commit { display: flex; gap: 10px; padding: 8px 4px; border-bottom: 1px solid var(--border); font-size: 13px; align-items: baseline; }
+  .commit .hash { font-family: var(--mono); color: var(--accent); }
+  .commit .when { color: var(--muted); font-size: 12px; margin-left: auto; white-space: nowrap; }
+  .commit .who { color: var(--muted); font-size: 12px; }
+  .empty { color: var(--muted); padding: 40px; text-align: center; }
+  .ws { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; margin-bottom: 12px; }
+  .ws .wpath { font-family: var(--mono); color: var(--accent); font-size: 13px; }
+  .ws .wmeta { color: var(--muted); font-size: 12.5px; margin-top: 6px; }
+  .hint { color: var(--muted); font-size: 12.5px; margin-top: 6px; }
+  @media (max-width: 860px) { #main { grid-template-columns: 1fr; } #side { display: none; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">setu<span class="tag">knowledge base</span></div>
+  <div class="stats" id="stats">loading…</div>
+  <button id="refresh">Refresh</button>
+</header>
+<div id="main">
+  <aside id="side">
+    <input id="search" type="search" placeholder="Filter runs by id, title, workspace…" autocomplete="off">
+    <div id="list"></div>
+  </aside>
+  <section id="detail"><div class="empty">Loading knowledge base…</div></section>
+</div>
+<script>
+"use strict";
+let KB = null, selected = null, filter = "", tab = "requirement";
+
+async function load() {
+  const res = await fetch("/api/kb");
+  if (!res.ok) { document.getElementById("detail").innerHTML = '<div class="empty">Failed to load: ' + escapeText(await res.text()) + "</div>"; return; }
+  KB = await res.json();
+  renderStats();
+  renderList();
+  if (!selected && KB.sessions.length) select(KB.sessions[0].key);
+  if (!KB.sessions.length) renderOverview();
+}
+function escapeText(s) { const d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
+
+function renderStats() {
+  document.getElementById("stats").innerHTML =
+    "<b>" + KB.sessions.length + "</b> runs · <b>" + KB.items + "</b> work items · <b>" +
+    KB.workspaces.length + "</b> workspaces · scanned " + escapeText(KB.scannedAt || "");
+}
+
+function filtered() {
+  const f = filter.trim().toLowerCase();
+  if (!f) return KB.sessions;
+  return KB.sessions.filter(s =>
+    (s.id + " " + s.title + " " + s.workspace + " " + s.harness + " " + s.status).toLowerCase().includes(f));
+}
+
+function renderList() {
+  const el = document.getElementById("list");
+  el.innerHTML = "";
+  const runs = filtered();
+  if (!runs.length) {
+    el.innerHTML = '<div class="empty">' + (KB.sessions.length ? "no runs match" : "no runs yet") + "</div>";
+    return;
+  }
+  for (const s of runs) {
+    const div = document.createElement("div");
+    div.className = "run" + (selected === s.key ? " active" : "");
+    div.innerHTML =
+      '<div class="row1"><span class="id">' + escapeText(s.id) + '</span>' +
+      '<span class="title">' + escapeText(s.title) + "</span></div>" +
+      '<div class="row2"><span class="badge ' + escapeText(s.status) + '">' + escapeText(s.status) + "</span>" +
+      "<span>" + escapeText(s.date || (s.startedAt || "").slice(0, 10)) + "</span>" +
+      "<span>" + escapeText(s.harness || "—") + "</span>" +
+      '<span class="sep"></span><span title="' + escapeText(s.workspace) + '">' +
+      escapeText(short(s.workspace)) + "</span></div>";
+    div.onclick = () => select(s.key);
+    el.appendChild(div);
+  }
+}
+
+function short(p) {
+  if (!p) return "";
+  const parts = p.split("/");
+  return parts.length > 2 ? "…/" + parts.slice(-2).join("/") : p;
+}
+
+function select(key) {
+  selected = key;
+  renderList();
+  renderDetail();
+}
+
+function session() { return KB.sessions.find(s => s.key === selected); }
+
+function renderOverview() {
+  const el = document.getElementById("detail");
+  el.innerHTML = "<h1>No runs yet</h1>";
+  if (KB.workspaces.length) {
+    for (const w of KB.workspaces) el.appendChild(wsCard(w));
+  }
+  const p = document.createElement("div");
+  p.className = "hint";
+  p.textContent = "Run `setu start` in a workspace to record a session, then refresh.";
+  el.appendChild(p);
+}
+
+function wsCard(w) {
+  const d = document.createElement("div");
+  d.className = "ws";
+  d.innerHTML = '<div class="wpath">' + escapeText(w.path) + "</div>" +
+    '<div class="wmeta">' + w.items + " work item(s) · " + w.sessions + " run(s) · " +
+    w.files.length + " context file(s) · " + w.commits.length + " persistence commit(s)</div>";
+  return d;
+}
+
+function renderDetail() {
+  const s = session();
+  const el = document.getElementById("detail");
+  if (!s) { renderOverview(); return; }
+  el.innerHTML =
+    "<h1><span class=\"kid\">" + escapeText(s.id) + "</span>" + escapeText(s.title) + "</h1>" +
+    '<div class="meta">' +
+    '<div>Status <b><span class="badge ' + escapeText(s.status) + '">' + escapeText(s.status) + "</span></b></div>" +
+    "<div>Started <b>" + escapeText(s.startedAt || "—") + "</b></div>" +
+    "<div>Ended <b>" + escapeText(s.endedAt || "—") + "</b></div>" +
+    "<div>Duration <b>" + escapeText(s.duration || "—") + "</b></div>" +
+    "<div>Harness <b>" + escapeText(s.harness || "—") + "</b></div>" +
+    "</div>" +
+    '<div class="meta"><div class="path">workspace <b>' + escapeText(s.workspace) + "</b></div></div>" +
+    '<div class="tabs">' +
+    '<button class="tab" data-t="requirement">Requirement</button>' +
+    '<button class="tab" data-t="log">Session log</button>' +
+    '<button class="tab" data-t="files">Context files</button>' +
+    '<button class="tab" data-t="commits">Git commits</button>' +
+    "</div><div class=\"pane\" id=\"pane\"></div>";
+  el.querySelectorAll(".tab").forEach(b => {
+    b.onclick = () => { tab = b.dataset.t; renderDetail(); };
+    if (b.dataset.t === tab) b.classList.add("active");
+  });
+  const pane = document.getElementById("pane");
+  if (tab === "requirement") {
+    if (!s.requirement) { pane.innerHTML = '<div class="empty">no requirement captured</div>'; }
+    else {
+      const d = document.createElement("div");
+      d.className = "md";
+      // Server-rendered markdown from HTML-escaped source (safe).
+      d.innerHTML = s.requirementHtml || "";
+      pane.appendChild(d);
+    }
+    if (s.sourceUrl || s.generatedAt || s.featureFile) {
+      const h = document.createElement("div");
+      h.className = "hint";
+      h.textContent = [s.sourceUrl ? "source: " + s.sourceUrl : "", s.generatedAt ? "generated: " + s.generatedAt : "", s.featureFile ? "file: " + s.featureFile : ""].filter(Boolean).join("  ·  ");
+      pane.appendChild(h);
+    }
+  } else if (tab === "log") {
+    const pre = document.createElement("pre");
+    pre.textContent = (s.logLines && s.logLines.length) ? s.logLines.join("\n") : "(empty log)";
+    pane.appendChild(pre);
+    const hint = document.createElement("div");
+    hint.className = "hint";
+    hint.textContent = s.logFile || "";
+    pane.appendChild(hint);
+  } else if (tab === "files") {
+    const ws = KB.workspaces.find(w => w.contextDir === s.contextDir);
+    if (!ws || !ws.files.length) { pane.innerHTML = '<div class="empty">no instruction files found</div>'; return; }
+    for (const f of ws.files) {
+      const wrap = document.createElement("div");
+      wrap.className = "file";
+      const name = document.createElement("div");
+      name.className = "fname";
+      name.textContent = f.path;
+      const pre = document.createElement("pre");
+      pre.textContent = f.content;
+      wrap.appendChild(name); wrap.appendChild(pre);
+      pane.appendChild(wrap);
+    }
+  } else if (tab === "commits") {
+    const ws = KB.workspaces.find(w => w.contextDir === s.contextDir);
+    if (!ws || !ws.commits.length) { pane.innerHTML = '<div class="empty">no git commits touched this workspace</div>'; return; }
+    for (const c of ws.commits) {
+      const row = document.createElement("div");
+      row.className = "commit";
+      row.innerHTML = '<span class="hash">' + escapeText(c.hash) + "</span>" +
+        "<span>" + escapeText(c.message) + '</span><span class="who">' + escapeText(c.author) +
+        '</span><span class="when">' + escapeText(c.when) + "</span>";
+      pane.appendChild(row);
+    }
+  }
+}
+
+document.getElementById("search").addEventListener("input", e => { filter = e.target.value; renderList(); });
+document.getElementById("refresh").addEventListener("click", load);
+load();
+</script>
+</body>
+</html>

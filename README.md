@@ -73,6 +73,7 @@ export CONFLUENCE_API_TOKEN=...      # or AI_HARNESS_CONFLUENCE_TOKEN
 |---|---|
 | `setu start` | Full flow: resolve → select → template → delegate → persist |
 | `setu list` | Print matching work items without starting a session |
+| `setu serve` | Serve the knowledge base web UI over previous runs |
 | `setu config init` | Write `~/.config/ai-harness/config.yaml` example |
 | `setu version` | Print version |
 
@@ -81,6 +82,11 @@ export CONFLUENCE_API_TOKEN=...      # or AI_HARNESS_CONFLUENCE_TOKEN
 `--config <path>`, `--harness <name>`, `--assignee <name>`, `--status <state>`,
 `--ticket <id>`, `--title <text>`, `--requirement <text>`, `--manual`,
 `--dry-run`, `--no-commit`, `--no-confluence`
+
+### Flags (`serve`)
+
+`--addr <host:port>` (default `127.0.0.1:8080`), `--dir <path>` (scan root for
+`.ai-context` workspaces; repeatable, default: current directory)
 
 ## Configuration (PRD 2.2)
 
@@ -124,15 +130,40 @@ harnesses:
     (or .github/copilot-instructions.md, prompt.md)
 ```
 
+## Knowledge base web UI
+
+Every run persists its context under `.ai-context/`. `setu serve` turns those
+directories into a browsable knowledge base:
+
+```sh
+setu serve                          # scan ./.ai-context → http://127.0.0.1:8080
+setu serve --addr :9000 --dir ~/work/repo-a --dir ~/work/repo-b
+```
+
+The page shows every recorded run (with completion status, duration and
+harness), and for each one:
+
+- **Requirement** — the feature markdown pulled from the tracker (rendered)
+- **Session log** — the start/end timeline of the run
+- **Context files** — `CLAUDE.md` / `prompt.md` / copilot instructions
+- **Git commits** — the persistence commits that touched `.ai-context`
+
+Runs are discovered by scanning the given roots for `.ai-context` directories
+(`.git`, `node_modules`, etc. are skipped), and the data is re-scanned on each
+page refresh, so new sessions show up without restarting the server. The UI is
+read-only and binds to localhost by default.
+
 ## Architecture
 
 ```text
-main.go → cmd/                 CLI dispatcher + start/list/config flows
+main.go → cmd/                 CLI dispatcher + start/list/serve/config flows
 pkg/config/   Config Manager  viper → struct, PATs via BindEnv (env only)
 pkg/ticket/   Ticketing Engine WorkItem + Provider (jira / azure / manual)
 pkg/context/  Context Builder  WorkItem → harness markdown files
 pkg/runner/   Harness Runner   os/exec with stdio bound to the subprocess
 pkg/storage/  Persistence      go-git auto-commit + Confluence REST push
+pkg/kb/       Knowledge Base   scan .ai-context runs → sessions/commits/files
+pkg/ui/       Web UI           embedded single-page viewer + JSON API
 ```
 
 Key interfaces (PRD 2.3):

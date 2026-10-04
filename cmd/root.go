@@ -13,6 +13,7 @@ const usage = `setu - AI Harness Orchestrator CLI (delegator pattern)
 Usage:
   setu start    [flags]   Resolve ticket, prepare context, delegate to harness
   setu list     [flags]   List available work items without starting a session
+  setu serve    [flags]   Serve the knowledge base web UI over previous runs
   setu config init        Write an example config to ~/.config/ai-harness/config.yaml
   setu version           Print version
 
@@ -28,6 +29,10 @@ Flags (start/list):
   --dry-run            Prepare context files only; do not execute the harness
   --no-commit          Skip the git commit during persistence
   --no-confluence      Skip the Confluence push during persistence
+
+Flags (serve):
+  --addr <host:port>   Listen address (default 127.0.0.1:8080)
+  --dir <path>         Scan root for .ai-context workspaces (repeatable; default .)
 
 Environment:
   AI_HARNESS_JIRA_TOKEN, JIRA_API_TOKEN, AI_HARNESS_AZURE_PAT,
@@ -46,6 +51,8 @@ func Execute(args []string, in io.Reader, out, errOut io.Writer) int {
 		return runStart(args[1:], in, out, errOut)
 	case "list":
 		return runList(args[1:], out, errOut)
+	case "serve":
+		return runServe(args[1:], out, errOut)
 	case "config":
 		if len(args) > 1 && args[1] == "init" {
 			return runConfigInit(args[2:], out, errOut)

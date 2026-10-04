@@ -262,10 +262,15 @@ func runStart(args []string, in io.Reader, out, errOut io.Writer) int {
 		}
 	}
 
-	// Step 6: persistence (PRD 1.2 step 6).
+	// Step 6: persistence (PRD 1.2 step 6). The status suffix lets the
+	// knowledge base UI distinguish failed runs from successful ones.
 	finishedAt := time.Now()
+	runStatus := "ok"
+	if harnessErr != nil {
+		runStatus = "failed"
+	}
 	if err := builder.AppendSessionNote(selected, fmt.Sprintf(
-		"session end: harness=%s duration=%s", harnessName, finishedAt.Sub(startedAt).Round(time.Millisecond),
+		"session end: harness=%s duration=%s status=%s", harnessName, finishedAt.Sub(startedAt).Round(time.Millisecond), runStatus,
 	)); err != nil {
 		fmt.Fprintf(errOut, "setu start: session log: %v\n", err)
 	}
